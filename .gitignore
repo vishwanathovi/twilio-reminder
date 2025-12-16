@@ -1,0 +1,27 @@
+# Environment files
+twilio.env
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Data files (optional - you might want to commit initial empty CSVs)
+# Uncomment the line below if you don't want to track CSV data
+# data/*.csv
+

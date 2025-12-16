@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from typing import List, Dict, Optional
 import uuid
+from config import get_ist_now
 
 
 # Get the project root directory (parent of src/)
@@ -59,9 +60,28 @@ def _write_csv(filename: str, headers: List[str], data: List[Dict[str, str]]) ->
 # Reminders functions
 def get_all_reminders() -> List[Dict[str, str]]:
     """Get all reminders from CSV."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Diagnostic logging
+    logger.info(f"DATA_DIR: {DATA_DIR}")
+    logger.info(f"REMINDERS_CSV path: {REMINDERS_CSV}")
+    logger.info(f"REMINDERS_CSV exists: {os.path.exists(REMINDERS_CSV)}")
+    
+    if os.path.exists(DATA_DIR):
+        try:
+            files = os.listdir(DATA_DIR)
+            logger.info(f"Files in DATA_DIR: {files}")
+        except Exception as e:
+            logger.error(f"Error listing DATA_DIR: {e}")
+    
     headers = ['id', 'user_name', 'date', 'time', 'content', 'repeat_frequency', 'status', 'last_called', 'created_at']
     _ensure_csv_exists(REMINDERS_CSV, headers)
-    return _read_csv(REMINDERS_CSV)
+    
+    reminders = _read_csv(REMINDERS_CSV)
+    logger.info(f"Found {len(reminders)} reminder(s) in CSV")
+    
+    return reminders
 
 
 def add_reminder(user_name: str, date: str, time: str, content: str, repeat_frequency: str = 'none') -> str:
@@ -84,7 +104,7 @@ def add_reminder(user_name: str, date: str, time: str, content: str, repeat_freq
         'repeat_frequency': repeat_frequency,
         'status': 'pending',
         'last_called': '',
-        'created_at': datetime.now().isoformat()
+        'created_at': get_ist_now().isoformat()
     }
     
     reminders.append(new_reminder)

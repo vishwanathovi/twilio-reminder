@@ -58,17 +58,6 @@ class ReminderService:
         logger.info(f"Checking for reminders every {self.check_interval} seconds")
         logger.info(f"Using Twilio number: {self.from_number}")
         
-        # Diagnostic: Log data directory info
-        import os
-        data_dir = "/app/data" if os.path.exists("/app/data") else "relative data/"
-        logger.info(f"Data directory: {data_dir}")
-        if os.path.exists("/app/data"):
-            try:
-                files = os.listdir("/app/data")
-                logger.info(f"Volume contents: {files}")
-            except Exception as e:
-                logger.error(f"Error reading volume: {e}")
-        
         # Log upcoming reminders on startup
         self._log_upcoming_reminders()
         

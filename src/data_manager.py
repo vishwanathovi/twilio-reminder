@@ -12,9 +12,9 @@ from config import get_ist_now
 
 # Get the project root directory (parent of src/)
 # Check for Railway volume mount first, then use relative path
-if os.path.exists("/app/data"):
-    # Railway volume is mounted at /app/data
-    DATA_DIR = "/app/data"
+if os.path.exists("/data"):
+    # Railway volume is mounted at /data
+    DATA_DIR = "/data"
 else:
     # Local development - use relative path
     PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,28 +60,9 @@ def _write_csv(filename: str, headers: List[str], data: List[Dict[str, str]]) ->
 # Reminders functions
 def get_all_reminders() -> List[Dict[str, str]]:
     """Get all reminders from CSV."""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    # Diagnostic logging
-    logger.info(f"DATA_DIR: {DATA_DIR}")
-    logger.info(f"REMINDERS_CSV path: {REMINDERS_CSV}")
-    logger.info(f"REMINDERS_CSV exists: {os.path.exists(REMINDERS_CSV)}")
-    
-    if os.path.exists(DATA_DIR):
-        try:
-            files = os.listdir(DATA_DIR)
-            logger.info(f"Files in DATA_DIR: {files}")
-        except Exception as e:
-            logger.error(f"Error listing DATA_DIR: {e}")
-    
     headers = ['id', 'user_name', 'date', 'time', 'content', 'repeat_frequency', 'status', 'last_called', 'created_at']
     _ensure_csv_exists(REMINDERS_CSV, headers)
-    
-    reminders = _read_csv(REMINDERS_CSV)
-    logger.info(f"Found {len(reminders)} reminder(s) in CSV")
-    
-    return reminders
+    return _read_csv(REMINDERS_CSV)
 
 
 def add_reminder(user_name: str, date: str, time: str, content: str, repeat_frequency: str = 'none') -> str:

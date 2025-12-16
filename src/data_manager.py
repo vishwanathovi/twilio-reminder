@@ -10,8 +10,14 @@ import uuid
 
 
 # Get the project root directory (parent of src/)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+# Check for Railway volume mount first, then use relative path
+if os.path.exists("/app/data"):
+    # Railway volume is mounted at /app/data
+    DATA_DIR = "/app/data"
+else:
+    # Local development - use relative path
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 REMINDERS_CSV = os.path.join(DATA_DIR, "reminders.csv")
 USERS_CSV = os.path.join(DATA_DIR, "users.csv")
@@ -100,6 +106,34 @@ def update_reminder_status(reminder_id: str, status: str, last_called: Optional[
             reminder['status'] = status
             if last_called:
                 reminder['last_called'] = last_called
+            updated = True
+            break
+    
+    if updated:
+        _write_csv(REMINDERS_CSV, headers, reminders)
+    
+    return updated
+
+
+def update_reminder(reminder_id: str, **kwargs) -> bool:
+    """
+    Update reminder fields (date, time, content, repeat_frequency, etc.).
+    Returns True if reminder was found and updated, False otherwise.
+    
+    Args:
+        reminder_id: ID of the reminder to update
+        **kwargs: Fields to update (date, time, content, repeat_frequency, etc.)
+    """
+    headers = ['id', 'user_name', 'date', 'time', 'content', 'repeat_frequency', 'status', 'last_called', 'created_at']
+    reminders = _read_csv(REMINDERS_CSV)
+    
+    updated = False
+    for reminder in reminders:
+        if reminder['id'] == reminder_id:
+            # Update only the fields provided in kwargs
+            for key, value in kwargs.items():
+                if key in reminder:
+                    reminder[key] = value
             updated = True
             break
     

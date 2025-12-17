@@ -86,30 +86,58 @@ class ReminderService:
             reminders = get_all_reminders()
             
             if not reminders:
-                logger.debug("No reminders found")
+                logger.info("No reminders in database")
                 return
             
             # Get due reminders
             due_reminders = get_due_reminders(reminders)
             
-            if not due_reminders:
-                logger.debug(f"Checked {len(reminders)} reminders, none are due")
-                return
-            
-            logger.info(f"Found {len(due_reminders)} due reminder(s)")
-            
-            # Execute each due reminder
-            for reminder in due_reminders:
-                logger.info(f"Executing reminder ID: {reminder['id']} for {reminder['user_name']}")
-                success = execute_reminder(reminder, self.from_number)
+            if due_reminders:
+                logger.info(f"Found {len(due_reminders)} due reminder(s)")
                 
-                if success:
-                    logger.info(f"Successfully executed reminder {reminder['id']}")
-                else:
-                    logger.warning(f"Failed to execute reminder {reminder['id']}")
+                # Execute each due reminder
+                for reminder in due_reminders:
+                    logger.info(f"Executing reminder ID: {reminder['id']} for {reminder['user_name']}")
+                    success = execute_reminder(reminder, self.from_number)
+                    
+                    if success:
+                        logger.info(f"Successfully executed reminder {reminder['id']}")
+                    else:
+                        logger.warning(f"Failed to execute reminder {reminder['id']}")
+            
+            # Log next upcoming reminder
+            self._log_next_reminder(reminders)
         
         except Exception as e:
             logger.error(f"Error checking reminders: {str(e)}", exc_info=True)
+    
+    def _log_next_reminder(self, reminders):
+        """Log the next upcoming reminder."""
+        try:
+            upcoming = get_upcoming_reminders(reminders, hours_ahead=24)
+            
+            if upcoming:
+                next_item = upcoming[0]  # Already sorted by time
+                reminder = next_item['reminder']
+                hours = next_item['hours_remaining']
+                minutes = next_item['minutes_remaining']
+                next_time = next_item['next_occurrence'].strftime('%H:%M:%S IST')
+                
+                # Format time remaining
+                if hours > 0 and minutes > 0:
+                    time_str = f"{hours}h {minutes}m"
+                elif hours > 0:
+                    time_str = f"{hours}h"
+                elif minutes > 0:
+                    time_str = f"{minutes}m"
+                else:
+                    time_str = "<1m"
+                
+                logger.info(f"Next reminder: {reminder['user_name']} - \"{reminder['content']}\" at {next_time} (in {time_str})")
+            else:
+                logger.info("No upcoming reminders in the next 24 hours")
+        except Exception as e:
+            logger.debug(f"Error getting next reminder: {e}")
     
     def _log_upcoming_reminders(self):
         """Log upcoming reminders in the next 24 hours."""

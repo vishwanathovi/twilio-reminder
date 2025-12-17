@@ -4,24 +4,39 @@ Handles reading and writing CSV files for reminders and users.
 """
 import csv
 import os
+import logging
 from datetime import datetime
 from typing import List, Dict, Optional
 import uuid
 from config import get_ist_now
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Get the project root directory (parent of src/)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Check for Railway volume mount first, then use relative path
-if os.path.exists("/data"):
-    # Railway volume is mounted at /data
+if os.path.exists("/app/data"):
+    # Railway volume is mounted at /app/data
+    DATA_DIR = "/app/data"
+    logger.info(f"Using Railway volume at /app/data")
+elif os.path.exists("/data"):
+    # Fallback: Railway volume at /data
     DATA_DIR = "/data"
+    logger.info(f"Using Railway volume at /data")
 else:
     # Local development - use relative path
-    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+    logger.info(f"Using local data directory: {DATA_DIR}")
 
 REMINDERS_CSV = os.path.join(DATA_DIR, "reminders.csv")
 USERS_CSV = os.path.join(DATA_DIR, "users.csv")
+
+# Log paths at module load
+logger.info(f"DATA_DIR: {DATA_DIR}")
+logger.info(f"REMINDERS_CSV: {REMINDERS_CSV}")
+logger.info(f"USERS_CSV: {USERS_CSV}")
 
 
 def _ensure_data_dir():
@@ -60,9 +75,40 @@ def _write_csv(filename: str, headers: List[str], data: List[Dict[str, str]]) ->
 # Reminders functions
 def get_all_reminders() -> List[Dict[str, str]]:
     """Get all reminders from CSV."""
+    logger.info(f"=== get_all_reminders() called ===")
+    logger.info(f"Looking for reminders at: {REMINDERS_CSV}")
+    logger.info(f"File exists: {os.path.exists(REMINDERS_CSV)}")
+    
+    # Log directory contents
+    if os.path.exists(DATA_DIR):
+        try:
+            files = os.listdir(DATA_DIR)
+            logger.info(f"Files in DATA_DIR ({DATA_DIR}): {files}")
+        except Exception as e:
+            logger.error(f"Error listing DATA_DIR: {e}")
+    else:
+        logger.warning(f"DATA_DIR does not exist: {DATA_DIR}")
+    
+    # Log file size if exists
+    if os.path.exists(REMINDERS_CSV):
+        size = os.path.getsize(REMINDERS_CSV)
+        logger.info(f"REMINDERS_CSV size: {size} bytes")
+        
+        # Log first few lines of file
+        try:
+            with open(REMINDERS_CSV, 'r') as f:
+                content = f.read()
+                logger.info(f"REMINDERS_CSV content ({len(content)} chars): {content[:500]}")
+        except Exception as e:
+            logger.error(f"Error reading REMINDERS_CSV: {e}")
+    
     headers = ['id', 'user_name', 'date', 'time', 'content', 'repeat_frequency', 'status', 'last_called', 'created_at']
     _ensure_csv_exists(REMINDERS_CSV, headers)
-    return _read_csv(REMINDERS_CSV)
+    
+    reminders = _read_csv(REMINDERS_CSV)
+    logger.info(f"Loaded {len(reminders)} reminder(s) from CSV")
+    
+    return reminders
 
 
 def add_reminder(user_name: str, date: str, time: str, content: str, repeat_frequency: str = 'none') -> str:

@@ -1,6 +1,6 @@
 """
-Call Manager Module
-Handles Twilio API calls and call status tracking.
+Message Manager Module
+Handles Twilio SMS messages and message status tracking.
 """
 
 import os
@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Debug mode - set to True to skip actual Twilio calls
+# Debug mode - set to True to skip actual Twilio messages
 DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
 
 
@@ -35,13 +35,13 @@ def get_twilio_client() -> Client:
     return Client(account_sid, auth_token)
 
 
-def make_reminder_call(reminder: dict, from_number: str) -> Tuple[bool, str]:
+def send_reminder_message(reminder: dict, from_number: str) -> Tuple[bool, str]:
     """
-    Make a Twilio call for a reminder.
+    Send a Twilio SMS message for a reminder.
 
     Args:
         reminder: Reminder dictionary with user_name and content
-        from_number: Twilio phone number to call from (E.164 format)
+        from_number: Twilio phone number to send from (E.164 format)
 
     Returns:
         Tuple of (success: bool, message: str)
@@ -56,9 +56,10 @@ def make_reminder_call(reminder: dict, from_number: str) -> Tuple[bool, str]:
 
         to_number = user["phone_number"]
         content = reminder.get("content", "")
-
-        # Create TwiML response
-        twiml = f"<Response><Say>{content}</Say></Response>"
+        
+        # Ensure newlines are properly handled (convert literal \n to actual newlines)
+        if content:
+            content = content.replace("\\n", "\n")
 
         # Log current IST time for debugging
         current_ist = get_ist_now()
@@ -71,24 +72,23 @@ def make_reminder_call(reminder: dict, from_number: str) -> Tuple[bool, str]:
         logger.info(f"[DEBUG] Repeat frequency: {reminder.get('repeat_frequency')}")
         logger.info(f"[DEBUG] Last called: {reminder.get('last_called', 'Never')}")
 
-        # Debug mode - skip actual call
+        # Debug mode - skip actual message
         if DEBUG_MODE:
             logger.info(
-                f"[DEBUG MODE] Would call {to_number} with message: '{content}'"
+                f"[DEBUG MODE] Would send SMS to {to_number} with message: '{content}'"
             )
             logger.info(f"[DEBUG MODE] From: {from_number}")
-            logger.info(f"[DEBUG MODE] TwiML: {twiml}")
-            return True, "DEBUG MODE - Call simulated"
+            return True, "DEBUG MODE - Message simulated"
 
         # Initialize Twilio client
         client = get_twilio_client()
 
-        # Make the call
-        logger.info(f"Making call to {to_number} for reminder: {content[:50]}...")
-        call = client.calls.create(twiml=twiml, to=to_number, from_=from_number)
+        # Send the SMS message
+        logger.info(f"Sending SMS to {to_number} for reminder: {content[:50]}...")
+        message = client.messages.create(body=content, to=to_number, from_=from_number)
 
-        logger.info(f"Call initiated successfully. Call SID: {call.sid}")
-        return True, f"Call successful. SID: {call.sid}"
+        logger.info(f"Message sent successfully. Message SID: {message.sid}")
+        return True, f"Message successful. SID: {message.sid}"
 
     except TwilioException as e:
         error_msg = f"Twilio error: {str(e)}"
@@ -100,36 +100,27 @@ def make_reminder_call(reminder: dict, from_number: str) -> Tuple[bool, str]:
         return False, error_msg
 
 
-def execute_reminder(reminder: dict, from_number: str) -> bool:
+def execute_reminder_message(reminder: dict, from_number: str) -> bool:
     """
-    Execute a reminder: make the call or send SMS and update status.
-    Supports both 'call' and 'sms' notification types.
+    Execute a reminder via SMS: send the message and update status.
 
     Args:
         reminder: Reminder dictionary
-        from_number: Twilio phone number to call/send from
+        from_number: Twilio phone number to send from
 
     Returns:
-        True if execution was successful, False otherwise
+        True if message was successful, False otherwise
     """
-    notification_type = reminder.get("notification_type", "call").lower()
-    
-    if notification_type == "sms":
-        # Import here to avoid circular dependency
-        from message_manager import execute_reminder_message
-        return execute_reminder_message(reminder, from_number)
-    else:
-        # Default to call for backward compatibility
-        success, message = make_reminder_call(reminder, from_number)
-        
-        # Update reminder status
-        status = "completed" if success else "failed"
-        last_called = get_ist_now().isoformat()
-        
-        update_reminder_status(reminder["id"], status, last_called)
-        
-        logger.info(
-            f"Reminder {reminder['id']} updated: status={status}, message={message}"
-        )
-        
-        return success
+    success, message = send_reminder_message(reminder, from_number)
+
+    # Update reminder status
+    status = "completed" if success else "failed"
+    last_called = get_ist_now().isoformat()
+
+    update_reminder_status(reminder["id"], status, last_called)
+
+    logger.info(
+        f"Reminder {reminder['id']} updated: status={status}, message={message}"
+    )
+
+    return success

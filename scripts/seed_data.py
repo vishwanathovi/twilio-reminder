@@ -38,13 +38,13 @@ from datetime import datetime
 today = datetime.now().strftime('%Y-%m-%d')
 
 reminders_to_add = [
-    ("Vishwa", today, "21:00", "Take your tablet", "daily"),
+    ("Vishwa", today, "21:00", "Take your tablet", "daily", "call"),
 ]
 
-for user, date, time, content, frequency in reminders_to_add:
+for user, date, time, content, frequency, notification_type in reminders_to_add:
     try:
-        reminder_id = add_reminder(user, date, time, content, frequency)
-        print(f"  ✓ Added reminder for {user}: {content} at {time} ({frequency})")
+        reminder_id = add_reminder(user, date, time, content, frequency, notification_type)
+        print(f"  ✓ Added reminder for {user}: {content} at {time} ({frequency}, {notification_type})")
         print(f"    ID: {reminder_id}")
     except Exception as e:
         print(f"  ✗ Error adding reminder: {e}")

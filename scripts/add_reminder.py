@@ -66,7 +66,7 @@ def main():
         sys.exit(1)
     
     # Get content
-    print("\nEnter reminder content (text to speak):")
+    print("\nEnter reminder content (text to speak/send):")
     content = input("> ").strip()
     if not content:
         print("Content cannot be empty")
@@ -79,14 +79,22 @@ def main():
         print("Invalid repeat frequency. Use: daily, weekly, monthly, or none")
         sys.exit(1)
     
+    # Get notification type
+    print("\nEnter notification type (call/sms):")
+    notification_type = input("> ").strip().lower()
+    if notification_type not in ["call", "sms"]:
+        print("Invalid notification type. Use: call or sms")
+        sys.exit(1)
+    
     # Add reminder
-    reminder_id = add_reminder(user_name, date, time_str, content, repeat_frequency)
+    reminder_id = add_reminder(user_name, date, time_str, content, repeat_frequency, notification_type)
     print(f"\n✓ Reminder added successfully!")
     print(f"  Reminder ID: {reminder_id}")
     print(f"  User: {user_name}")
     print(f"  Date: {date}")
     print(f"  Time: {time_str}")
     print(f"  Repeat: {repeat_frequency}")
+    print(f"  Type: {notification_type}")
 
 
 if __name__ == "__main__":

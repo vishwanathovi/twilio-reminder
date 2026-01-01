@@ -1,1 +1,4 @@
-id,user_name,date,time,content,repeat_frequency,status,last_called,created_at
+id,user_name,date,time,content,repeat_frequency,status,last_called,created_at,notification_type
+5b9ecaaa-2b6d-4b41-b17e-4ee5db953681,Vishwa,2026-01-01,21:00,"Take Tablet.
+
+Consistency beats everything else",daily,pending,,2026-01-01T22:44:29.185721,sms

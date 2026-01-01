@@ -16,6 +16,7 @@ def format_reminder(reminder: dict) -> str:
     """Format a reminder for display."""
     status = reminder.get('status', 'pending')
     last_called = reminder.get('last_called', 'Never')
+    notification_type = reminder.get('notification_type', 'call')
     
     if last_called:
         try:
@@ -31,6 +32,7 @@ ID: {reminder['id']}
   Time: {reminder['time']}
   Content: {reminder['content']}
   Repeat: {reminder.get('repeat_frequency', 'none')}
+  Type: {notification_type.upper()}
   Status: {status}
   Last Called: {last_called}
   Created: {reminder.get('created_at', 'Unknown')}

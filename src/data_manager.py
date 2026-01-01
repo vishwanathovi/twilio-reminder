@@ -73,17 +73,31 @@ def get_all_reminders() -> List[Dict[str, str]]:
         "status",
         "last_called",
         "created_at",
+        "notification_type",
     ]
     _ensure_csv_exists(REMINDERS_CSV, headers)
-    return _read_csv(REMINDERS_CSV)
+    reminders = _read_csv(REMINDERS_CSV)
+    # Ensure backward compatibility: add notification_type if missing
+    for reminder in reminders:
+        if "notification_type" not in reminder:
+            reminder["notification_type"] = "call"
+    return reminders
 
 
 def add_reminder(
-    user_name: str, date: str, time: str, content: str, repeat_frequency: str = "none"
+    user_name: str, date: str, time: str, content: str, repeat_frequency: str = "none", notification_type: str = "call"
 ) -> str:
     """
     Add a new reminder to the CSV.
     Returns the generated reminder ID.
+    
+    Args:
+        user_name: Name of the user
+        date: Date in YYYY-MM-DD format
+        time: Time in HH:MM format
+        content: Reminder content/message
+        repeat_frequency: Frequency (daily/weekly/monthly/none)
+        notification_type: Type of notification (call/sms), defaults to "call"
     """
     headers = [
         "id",
@@ -95,6 +109,7 @@ def add_reminder(
         "status",
         "last_called",
         "created_at",
+        "notification_type",
     ]
     _ensure_csv_exists(REMINDERS_CSV, headers)
 
@@ -111,6 +126,7 @@ def add_reminder(
         "status": "pending",
         "last_called": "",
         "created_at": get_ist_now().isoformat(),
+        "notification_type": notification_type,
     }
 
     reminders.append(new_reminder)
@@ -135,6 +151,7 @@ def update_reminder_status(
         "status",
         "last_called",
         "created_at",
+        "notification_type",
     ]
     reminders = _read_csv(REMINDERS_CSV)
 
@@ -144,6 +161,9 @@ def update_reminder_status(
             reminder["status"] = status
             if last_called:
                 reminder["last_called"] = last_called
+            # Ensure notification_type exists for backward compatibility
+            if "notification_type" not in reminder:
+                reminder["notification_type"] = "call"
             updated = True
             break
 
@@ -172,12 +192,16 @@ def update_reminder(reminder_id: str, **kwargs) -> bool:
         "status",
         "last_called",
         "created_at",
+        "notification_type",
     ]
     reminders = _read_csv(REMINDERS_CSV)
 
     updated = False
     for reminder in reminders:
         if reminder["id"] == reminder_id:
+            # Ensure notification_type exists for backward compatibility
+            if "notification_type" not in reminder:
+                reminder["notification_type"] = "call"
             # Update only the fields provided in kwargs
             for key, value in kwargs.items():
                 if key in reminder:
